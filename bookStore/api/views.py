@@ -120,3 +120,103 @@ def delete_category(request, category_id):
         return Response({'error':'Category not found!'}, status=status.HTTP_404_NOT_FOUND)
     
 
+# create a new order
+
+@api_view(['POST'])
+def create_order(request):
+    if request.user.is_authenticated:
+        book_id = request.date.get('book')
+        quantity = request.data.get('quantity')
+
+        try:
+            book = Book.objects.get(id=book_id)
+        except Book.DoesNotExist:
+            return Response({'error': 'Book not dound!'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if book.stock < quantity:
+            return Response({'error':'Not enought stock'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            book.stock -= quantity
+            book.save()
+
+            order = Order.objects.create(
+                user = request.user, 
+                book = book,
+                quantity = quantity,
+                status = 'pending',
+            )
+
+            serializer = OrderSerailizer(order, many=False)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+    else:
+        return Response({'error': 'Authentication required!'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+# Get all orders for a user
+@api_view(['GET'])
+def order_list(request):
+    if request.user.is_authenticated:
+        orders = Order.objects.filter(user = request.user)
+
+        serializer = OrderSerailizer(orders, many=True)
+        return Response(serializer.data)
+    
+    else:
+        return Response({'error':'Authentication required!'},status=status.HTTP_401_UNAUTHORIZED)
+    
+# Get a specific order by ID
+@api_view(['GET'])
+def order_detail(request, order_id):
+    if request.user.is_authenticated:
+        try:
+            order = Order.objects.get(id=order_id, user = request.user)
+        except Order.DoesNotExist:
+            return Response({'error': 'Book not dound!'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrderSerailizer(order, many=False)
+        return Response(serializer.data)
+    
+    else:
+        return Response({'error': 'Ahthentication required!'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+#Update a Specific order
+@api_view(['PUT'])
+def update_order(request, order_id):
+    if request.user.is_authenticated:
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not faund!'})
+        
+        quantity = request.data.get('quantity')
+        if quantity is not None:
+            if order.book.stock + order.quantity < quantity:
+                return Response({"error": "Not enough stock"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                #Adjust book stock
+                order.book.stack += order.quantity #Return previous qauntity to stock
+                order.book.stock -= quantity       # Deduct new quantity
+                order.quantity = quantity          #Update order quantity
+
+        serializer = OrderSerailizer(order, data=request.data, partial=True)    
+
+        if serializer.is_valid():
+            order.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+# Delete a Specific Order
+@api_view(['DELETE'])
+def delete_order(request, order_id):
+    if request.user.is_authenticated:
+        try:
+            order = Order.objects.get(id=order_id, user=request.user)
+            order.book.stock += order.quantity
+            order.book.save()
+            order.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Order.DoesNotExist:
+            return Response({'error':'Order not faund!'})
+    else:
+        return Response({'error':'Authentication required!'}, status=status.HTTP_401_UNAUTHORIZED)
