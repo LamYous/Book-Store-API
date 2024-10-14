@@ -32,5 +32,10 @@ class Order(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
+    #calculate total amount
+    def save(self, *args, **kwargs):
+        self.total_amount = self.book.price * self.quantity
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.user.username} ordered {self.quantity} x {self.book.title} - Status: {self.status}"
