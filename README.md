@@ -1,6 +1,6 @@
 # Bookstore API
 
-A RESTful API for managing a bookstore, built with Django and Django REST Framework (DRF). This API allows users to perform CRUD operations on books, manage their accounts, and handle orders effectively.
+A RESTful API for managing a bookstore, built with Django and Django REST Framework (DRF).
 
 ## Features
 
@@ -17,11 +17,7 @@ A RESTful API for managing a bookstore, built with Django and Django REST Framew
   - Update existing orders.
   - Delete orders.
 
-- **Authentication**:
-  - Secure endpoints with JWT (JSON Web Token) authentication.
-
 ## Technologies Used
-
 - **Backend**: Django, Django REST Framework
 - **Database**: SQLite
 - **Authentication**: JSON Web Token (JWT)
